@@ -9,12 +9,56 @@ import "./oraclizeAPI.sol";
 contract CoinsOpenToken is ERC20, usingOraclize, Ownable
 {
 
+  /*
+  Inherited functions:
+    Ownable:
+    -onlyOwner
+    -transferOwnership
+
+  */
+
+  // Token informations
+  string public constant name = "COT";
+  string public constant symbol = "COT";
+  uint8 public constant decimals = 18;
 
   using SafeMath for uint256;
   mapping(address => uint256) balances;
   mapping (address => mapping (address => uint256)) internal allowed;
 
+  /**
+   * event for token purchase logging
+   * @param purchaser who paid for the tokens
+   * @param beneficiary who got the tokens
+   * @param value weis paid for purchase
+   * @param amount amount of tokens purchased
+   */
+  event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
+  function CoinsOpenToken() {
+
+  }
+
+
+  function() payable {
+    if (msg.sender == owner) {
+
+    } else {
+      buyTokens(msg.sender);
+    }
+  }
+
+  function buyTokens(address _receiver) {
+    require(validPurchase());
+    
+  }
+
+
+  // @return true if the transaction can buy tokens
+  function validPurchase() internal constant returns (bool) {
+    bool nonZeroPurchase = msg.value != 0;
+    return nonZeroPurchase;
+  }
 
    /**
    * @dev transfer token for a specified address
