@@ -85,8 +85,9 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    */
   function __callback(bytes32 _myid, string _result) {
     require (msg.sender == oraclize_cbAddress());
-    require (buyOrders[_myid].wei != 0);
-    uint etherPriceUSD = parseInt(_result, 2);
+    BuyOrder order = buyOrders[_myid];
+    require (order != 0);
+    uint etherPriceEUR = parseInt(_result, 2);
     // Logic for buying and sending token here
     //@TODO check preSaleEndTime
     //@TODO check number of token already distributes
