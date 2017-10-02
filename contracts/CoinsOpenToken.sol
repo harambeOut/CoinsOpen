@@ -27,10 +27,14 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   uint256 public saleEndTime = 0;
   uint256 public preSaleEndTime = 0;
 
+  uint256 public preSaleTokenPrice = 70;
+  uint256 public saleTokenPrice = 100;
+
+
   mapping (bytes32 => BuyOrder) buyOrders;
 
   struct BuyOrder {
-      uint256 wei;
+      uint256 wether;
       address receiver;
       address payer;
       bool presale;
@@ -46,15 +50,16 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount, bool presale);
 
   /**
-   * event for querying Ethereum EUR price for a buy order
+   * event for querying Ethereum USD price for a buy order
    * @param purchaser who paid for the tokens
    * @param beneficiary who got the tokens
-   * @param value weis paid for purchase
+   * @param amount requestid the ID of the oraclize request
    * @param amount amount of tokens purchased
+   * @param presale was it bought in presale?
    */
-  event PriceQuery(address indexed purchaser, address indexed beneficiary, byte32 requestid, uint256 amount, bool presale);
+  event PriceQuery(address indexed purchaser, address indexed beneficiary, bytes32 indexed requestid, uint256 amount, bool presale);
 
-  function CoinsOpenToken() {
+  function CoinsOpenToken(address locked) {
 
   }
 
@@ -67,11 +72,15 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     }
   }
 
+  /**
+   * Buy tokens during the sale/presale
+   * @param _receiver who should receive the tokens
+   */
   function buyTokens(address _receiver) payable {
     require(validPurchase());
-    bool isPresale = preSaleEndTime >= now;
-    byte32 orderId = oraclize_query("URL", "json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=EUR).EUR");
-    buyOrders[orderId].wei = msg.value;
+    bool isPresale = isInPresale();
+    bytes32 orderId = oraclize_query("URL", "json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD).USD");
+    buyOrders[orderId].wether = msg.value;
     buyOrders[orderId].receiver = _receiver;
     buyOrders[orderId].payer = msg.sender;
     buyOrders[orderId].presale = isPresale;
@@ -79,27 +88,42 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   }
 
   /**
-   * Oraclize callback to receive Ethereum EUR price
+   * Oraclize callback to receive Ethereum USD price
    * @param _myid ID of the request
    * @param _result String data
    */
   function __callback(bytes32 _myid, string _result) {
     require (msg.sender == oraclize_cbAddress());
-    BuyOrder order = buyOrders[_myid];
-    require (order != 0);
-    uint etherPriceEUR = parseInt(_result, 2);
+    BuyOrder storage order = buyOrders[_myid];
+    require (order.wether != 0);
+    uint256 etherPriceUSD = parseInt(_result, 2);
+    uint256 tokenPrice = saleTokenPrice;
+    if (order.presale) {
+      tokenPrice = preSaleTokenPrice;
+    }
+    uint256 centsAmount = (order.wether).div(etherPriceUSD) * 1 ether;
+    uint256 tokens = centsAmount.div(tokenPrice);
+    TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
     // Logic for buying and sending token here
-    //@TODO check preSaleEndTime
     //@TODO check number of token already distributes
-    //@TODO convert amount of tokens
+    //@TODO convert amount of tokens: Have to test
     //@TODO transfer the tokens
+    buyOrders[_myid].wether = 0; //Clean the order book
+  }
+
+  function isInPresale() constant returns (bool) {
+    return preSaleEndTime >= now;
   }
 
 
   // @return true if the transaction can buy tokens
   function validPurchase() internal constant returns (bool) {
-    bool nonZeroPurchase = msg.value != 0;
+    bool nonZeroPurchase = (msg.value != 0);
     return nonZeroPurchase;
+  }
+
+  function withdraw() onlyOwner {
+    (msg.sender).transfer(this.balance);
   }
 
 }
