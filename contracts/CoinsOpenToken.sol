@@ -60,9 +60,8 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   event PriceQuery(address indexed purchaser, address indexed beneficiary, bytes32 indexed requestid, uint256 amount, bool presale);
 
   function CoinsOpenToken(address locked) {
-
+    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
   }
-
 
   function() payable {
     if (msg.sender == owner) {

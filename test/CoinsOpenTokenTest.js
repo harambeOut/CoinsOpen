@@ -1,7 +1,24 @@
-var MetaCoin = artifacts.require("./CoinsOpenToken.sol");
+var CoinsOpenToken = artifacts.require("./CoinsOpenToken.sol");
 
 contract('CoinsOpenToken', function(accounts) {
 
+  it("should have a 0 balance in the accounts", function() {
+    return CoinsOpenToken.deployed().then(function(instance) {
+      return instance.balanceOf.call(accounts[0]);
+    }).then(function(balance) {
+      assert.equal(balance.valueOf(), 0, "0 wasn't in the first account");
+    });
+  });
+
+  it("should have a 0 balance in the accounts", function() {
+    return CoinsOpenToken.deployed().then(function(instance) {
+
+      return instance.buyTokens(accounts[0], {value: web3.toWei(5, "ether")});
+    }).then(function(balance) {
+      console.log(balance)
+      assert.equal(balance.valueOf(), 0, "0 wasn't in the first account");
+    });
+  });
   /*
   it("should put 10000 MetaCoin in the first account", function() {
     return MetaCoin.deployed().then(function(instance) {
