@@ -23,6 +23,18 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   uint8 public constant decimals = 18;
   uint public totalSupply = 210000000000000000 ;
 
+  uint256 public saleStartTime = 0;
+  uint256 public saleEndTime = 0;
+  uint256 public preSaleEndTime = 0;
+
+  mapping (bytes32 => BuyOrder) buyOrders;
+
+  struct BuyOrder {
+      uint256 wei;
+      address receiver;
+      address payer;
+  }
+
   /**
    * event for token purchase logging
    * @param purchaser who paid for the tokens
@@ -31,6 +43,15 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @param amount amount of tokens purchased
    */
   event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+
+  /**
+   * event for querying Ethereum EUR price for a buy order
+   * @param purchaser who paid for the tokens
+   * @param beneficiary who got the tokens
+   * @param value weis paid for purchase
+   * @param amount amount of tokens purchased
+   */
+  event PriceQuery(address indexed purchaser, address indexed beneficiary, byte32 requestid, uint256 amount);
 
   function CoinsOpenToken() {
 
@@ -47,12 +68,27 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
 
   function buyTokens(address _receiver) {
     require(validPurchase());
-
+    byte32 orderId = oraclize_query("URL", "json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=EUR).EUR");
+    buyOrders[orderId].wei = msg.value;
+    buyOrders[orderId].receiver = _receiver;
+    buyOrders[orderId].payer msg.sender;
+    PriceQuery(msg.sender, _receiver, orderId, msg.value);
   }
 
-  function __callback(bytes32 myid, string result) {
+  /**
+   * Oraclize callback to receive Ethereum EUR price
+   * @param _myid ID of the request
+   * @param _result String data
+   */
+  function __callback(bytes32 _myid, string _result) {
     require (msg.sender == oraclize_cbAddress());
-
+    require (buyOrders[_myid].wei != 0);
+    uint etherPriceUSD = parseInt(_result, 2);
+    // Logic for buying and sending token here
+    //@TODO check preSaleEndTime
+    //@TODO check number of token already distributes
+    //@TODO convert amount of tokens
+    //@TODO transfer the tokens
   }
 
 
@@ -61,7 +97,5 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     bool nonZeroPurchase = msg.value != 0;
     return nonZeroPurchase;
   }
-
-
 
 }
