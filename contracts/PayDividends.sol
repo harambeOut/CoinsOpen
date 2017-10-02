@@ -3,72 +3,50 @@ pragma solidity ^0.4.8;
 import './PreICOandICO.sol';
 
 
-contract ERC20 {
-
-  uint public totalSupply;
-
-  function balanceOf(address who) constant returns (uint256);
-
-  function allowance(address owner, address spender) constant returns (uint);
-
-  function transferFrom(address from, address to, uint value) returns (bool ok);
-
-  function approve(address spender, uint value) returns (bool ok);
-
-  function transfer(address to, uint value) returns (bool ok);
-
-  function convert(uint _value) returns (bool ok);
-
-  event Transfer(address indexed from, address indexed to, uint value);
-
-  event Approval(address indexed owner, address indexed spender, uint value);
-
-}
-
 contract Dividend is ERC20
 {
     ICO instance;
     uint public totalSupply = 5000000;  // total supply of 6-- 0
-      
+
       mapping(address => uint) balances;
 
       mapping(address => address) private userStructs;
 
       mapping (address => mapping (address => uint)) allowed;
-      
+
       address owner;
-      
+
       uint256 ether_profit;
-      
+
       uint256 profit_per_token;
-      
+
       uint256 holder_token_balance;
-      
+
       uint256 holder_profit;
-      
+
       event Message(uint256 holde_profit);
 
        address[] addresses;
-      
+
       function Dividend(address ico_contract)
       {
-          
+
           instance = ICO(ico_contract);
       }
-    
+
 
     function () payable
     {
         //------accepting ether as profit
-        
+
         ether_profit = msg.value;
-        
+
         profit_per_token = (ether_profit)/(totalSupply);
-        
+
         Message(ether_profit);
-        
+
          Message(profit_per_token);
-            
+
         if(addresses.length >0)
         {
              for (uint i = 0; i < addresses.length; i++) {
@@ -78,35 +56,35 @@ contract Dividend is ERC20
              }
         }
 
-        
-        
+
+
     }
-    
+
     function request_dividend(address token_holder) payable
     {
-        
+
         holder_token_balance = instance.balanceOf(token_holder);
-        
+
         Message(holder_token_balance);
-        
+
         holder_profit = holder_token_balance * profit_per_token;
-        
+
         Message(holder_profit);
-        
-    
-        token_holder.send(holder_profit);   
-        
+
+
+        token_holder.send(holder_profit);
+
     }
-      
-    
+
+
      function balanceOf(address sender) constant returns (uint256 balance) {
-      
+
           return instance.balanceOf(sender);
       }
-      
+
 
       function transfer(address _to, uint256 _amount) returns (bool success) {
-          if (balances[msg.sender] >= _amount 
+          if (balances[msg.sender] >= _amount
               && _amount > 0
               && balances[_to] + _amount > balances[_to]) {
               balances[msg.sender] -= _amount;
@@ -132,9 +110,9 @@ contract Dividend is ERC20
               return false;
           }
       }
-      
 
-      
+
+
       function transferFrom(
           address _from,
           address _to,
@@ -154,7 +132,7 @@ contract Dividend is ERC20
              return false;
          }
      }
-     
+
 
      // If this function is called again it overwrites the current allowance with _value.
      function approve(address _spender, uint256 _amount) returns (bool success) {
@@ -162,14 +140,14 @@ contract Dividend is ERC20
          Approval(msg.sender, _spender, _amount);
          return true;
      }
-  
+
      function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
          return allowed[_owner][_spender];
      }
-     
+
      function convert(uint _value) returns (bool ok)
      {
          return true;
      }
-    
+
 }
