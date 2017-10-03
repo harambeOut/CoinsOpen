@@ -21,7 +21,10 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   string public constant name = "COT";
   string public constant symbol = "COT";
   uint8 public constant decimals = 18;
-  uint public totalSupply = 210000000000000000 ;
+  uint public totalSupply = 21000000;
+  uint256 public presaleSupply = 2000000;
+  uint256 public saleSupply = 12000000;
+  uint256 public reserveSupply = 7000000;
 
   uint256 public saleStartTime = 0;
   uint256 public saleEndTime = 0;
@@ -29,7 +32,6 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
 
   uint256 public preSaleTokenPrice = 70;
   uint256 public saleTokenPrice = 100;
-
 
   mapping (bytes32 => BuyOrder) buyOrders;
 
@@ -60,7 +62,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   event PriceQuery(address indexed purchaser, address indexed beneficiary, bytes32 indexed requestid, uint256 amount, bool presale);
 
   function CoinsOpenToken(address locked) {
-    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
 
   function() payable {
@@ -78,6 +80,9 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   function buyTokens(address _receiver) payable {
     require(validPurchase());
     bool isPresale = isInPresale();
+    if (!isPresale) {
+      checkPresale();
+    }
     bytes32 orderId = oraclize_query("URL", "json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD).USD");
     buyOrders[orderId].wether = msg.value;
     buyOrders[orderId].receiver = _receiver;
@@ -103,10 +108,25 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     uint256 centsAmount = (order.wether).div(etherPriceUSD) * 1 ether;
     uint256 tokens = centsAmount.div(tokenPrice);
     TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
-    // Logic for buying and sending token here
-    //@TODO check number of token already distributes
+    if (order.presale) {
+      if (presaleSupply < tokens) {
+        order.payer.transfer(order.wether);
+        return;
+      }
+    } else {
+      if (saleSupply < tokens) {
+        order.payer.transfer(order.wether);
+        return;
+      }
+    }
     //@TODO convert amount of tokens: Have to test
-    //@TODO transfer the tokens
+    Transfer(0x0, order.receiver, tokens);
+    balances[order.receiver].add(tokens);
+    if (order.presale) {
+      presaleSupply.sub(tokens);
+    } else {
+      saleSupply.sub(tokens);
+    }
     buyOrders[_myid].wether = 0; //Clean the order book
   }
 
@@ -114,11 +134,34 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     return preSaleEndTime >= now;
   }
 
+  function isInSale() constant returns (bool) {
+    return saleEndTime >= now;
+  }
 
   // @return true if the transaction can buy tokens
   function validPurchase() internal constant returns (bool) {
     bool nonZeroPurchase = (msg.value != 0);
-    return nonZeroPurchase;
+    return nonZeroPurchase && isInSale();
+  }
+
+  // @return true if the transaction can buy tokens
+  function checkPresale() internal {
+    if (!isInPresale() && presaleSupply > 0) {
+      saleSupply.add(presaleSupply);
+      presaleSupply = 0;
+    }
+  }
+
+  /**
+   * Distribute tokens from the reserve
+   * @param _amount Amount to transfer
+   * @param _receiver Address of the receiver
+   */
+  function distributeReserveSupply(uint256 _amount, address _receiver) onlyOwner {
+    require (_amount <= reserveSupply);
+    balances[_receiver].add(_amount);
+    reserveSupply.sub(_amount);
+    Transfer(0x0, _receiver, _amount);
   }
 
   function withdraw() onlyOwner {
