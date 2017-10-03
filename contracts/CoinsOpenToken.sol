@@ -21,10 +21,10 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   string public constant name = "COT";
   string public constant symbol = "COT";
   uint8 public constant decimals = 18;
-  uint public totalSupply = 21000000;
-  uint256 public presaleSupply = 2000000;
-  uint256 public saleSupply = 12000000;
-  uint256 public reserveSupply = 7000000;
+  uint public totalSupply = 21000000 * decimals;
+  uint256 public presaleSupply = 2000000  * decimals;
+  uint256 public saleSupply = 12000000 * decimals;
+  uint256 public reserveSupply = 7000000 * decimals;
 
   uint256 public saleStartTime = 0;
   uint256 public saleEndTime = 0;
@@ -34,6 +34,11 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   uint256 public saleTokenPrice = 100;
 
   mapping (bytes32 => BuyOrder) buyOrders;
+
+  mapping (address => uint256) lastDividend;
+  mapping (uint256 =>uint256) dividendList;
+  uint256 currentDividend = 0;
+  uint256 dividendAmount = 0;
 
   struct BuyOrder {
       uint256 wether;
@@ -67,7 +72,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
 
   function() payable {
     if (msg.sender == owner) {
-
+      giveDividend();
     } else {
       buyTokens(msg.sender);
     }
@@ -107,7 +112,6 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     }
     uint256 centsAmount = (order.wether).div(etherPriceUSD) * 1 ether;
     uint256 tokens = centsAmount.div(tokenPrice);
-    TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
     if (order.presale) {
       if (presaleSupply < tokens) {
         order.payer.transfer(order.wether);
@@ -119,6 +123,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
         return;
       }
     }
+    TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
     //@TODO convert amount of tokens: Have to test
     Transfer(0x0, order.receiver, tokens);
     balances[order.receiver].add(tokens);
@@ -128,6 +133,39 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
       saleSupply.sub(tokens);
     }
     buyOrders[_myid].wether = 0; //Clean the order book
+  }
+
+  function giveDividend() payable {
+    require (msg.value != 0);
+    dividendAmount.add(msg.value);
+    dividendList[currentDividend] = msg.value / totalSupply;
+    currentDividend += 1;
+  }
+
+  function checkDividend(address _account) {
+    if (lastDividend[_account] != currentDividend) {
+      if (balanceOf(_account) != 0) {
+        uint256 toSend = 0;
+        for (uint i = lastDividend[_account]; i <= currentDividend; i++) {
+          toSend += balanceOf(_account).mul(dividendList[i]);
+        }
+        if (toSend > 0 && toSend <= dividendAmount) {
+          _account.send(toSend);
+          dividendAmount.sub(toSend);
+        }
+      }
+      lastDividend[_account] = currentDividend;
+    }
+  }
+
+  function transfer(address _to, uint256 _value) public returns (bool) {
+    checkDividend(msg.sender);
+    return super.transfer(_to, _value);
+  }
+
+  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    checkDividend(_from);
+    return super.transferFrom(_from, _to, _value);
   }
 
   function isInPresale() constant returns (bool) {
@@ -164,6 +202,9 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     Transfer(0x0, _receiver, _amount);
   }
 
+  /**
+   * Withdraw Ether from contract
+   */
   function withdraw() onlyOwner {
     (msg.sender).transfer(this.balance);
   }
