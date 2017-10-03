@@ -66,6 +66,13 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    */
   event PriceQuery(address indexed purchaser, address indexed beneficiary, bytes32 indexed requestid, uint256 amount, bool presale);
 
+  /**
+   * event for notifying of a Ether received to distribute as dividend
+   * @param amount of dividend received
+   * @param weipertoken wei received per stored token
+   */
+  event DividendAvalaible(uint indexed amount, uint indexed weipertoken);
+
   function CoinsOpenToken(address locked) {
     OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
@@ -203,9 +210,18 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   }
 
   /**
+   * Withdraw some Ether from contract
+   */
+  function withdraw(uint _amount) onlyOwner {
+    require (_amount != 0);
+    require (_amount < this.balance);
+    (msg.sender).transfer(_amount);
+  }
+
+  /**
    * Withdraw Ether from contract
    */
-  function withdraw() onlyOwner {
+  function withdrawEverything() onlyOwner {
     (msg.sender).transfer(this.balance);
   }
 
