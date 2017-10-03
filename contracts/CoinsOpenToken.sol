@@ -130,6 +130,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
         return;
       }
     }
+    checkDividend(order.receiver);
     TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
     //@TODO convert amount of tokens: Have to test
     Transfer(0x0, order.receiver, tokens);
@@ -204,6 +205,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    */
   function distributeReserveSupply(uint256 _amount, address _receiver) onlyOwner {
     require (_amount <= reserveSupply);
+    checkDividend(_receiver);
     balances[_receiver].add(_amount);
     reserveSupply.sub(_amount);
     Transfer(0x0, _receiver, _amount);
