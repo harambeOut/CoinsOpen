@@ -3,7 +3,7 @@ pragma solidity ^0.4.8;
 import "./StandardToken.sol";
 import "./SafeMath.sol";
 import "./Ownable.sol";
-import "./oraclizeAPI.sol";
+import "./OraclizeAPI.sol";
 
 
 contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
@@ -26,9 +26,9 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   uint256 public saleSupply = 12000000 * decimals;
   uint256 public reserveSupply = 7000000 * decimals;
 
-  uint256 public saleStartTime = 0;
-  uint256 public saleEndTime = 0;
-  uint256 public preSaleEndTime = 0;
+  uint256 public saleStartTime = 1511136000; /* Monday, November 20, 2017 12:00:00 AM */
+  uint256 public saleEndTime = 1513728000; /* Wednesday, December 20, 2017 12:00:00 AM */
+  uint256 public preSaleEndTime = 1508457600; /* Friday, October 20, 2017 12:00:00 AM */
 
   uint256 public preSaleTokenPrice = 70;
   uint256 public saleTokenPrice = 100;
@@ -71,7 +71,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @param amount of dividend received
    * @param weipertoken wei received per stored token
    */
-  event DividendAvalaible(uint indexed amount, uint indexed weipertoken);
+  event DividendAvailable(uint indexed amount, uint indexed weipertoken);
 
   function CoinsOpenToken(address locked) {
     OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
@@ -90,7 +90,9 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @param _receiver who should receive the tokens
    */
   function buyTokens(address _receiver) payable {
-    require(validPurchase());
+    require (msg.value != 0);
+    require (_receiver != 0x0);
+    require (isInSale());
     bool isPresale = isInPresale();
     if (!isPresale) {
       checkPresale();
@@ -143,13 +145,21 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     buyOrders[_myid].wether = 0; //Clean the order book
   }
 
+  /**
+   * @dev Pay this function to add the dividends
+   */
   function giveDividend() payable {
     require (msg.value != 0);
     dividendAmount.add(msg.value);
     dividendList[currentDividend] = msg.value / totalSupply;
     currentDividend += 1;
+    DividendAvailable(msg.value, msg.value / totalSupply);
   }
 
+  /**
+   * @dev Returns true if we are still in pre sale period
+   * @param _account The address to check and send dividends
+   */
   function checkDividend(address _account) {
     if (lastDividend[_account] != currentDividend) {
       if (balanceOf(_account) != 0) {
@@ -166,28 +176,39 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     }
   }
 
+  /**
+  * @dev transfer token for a specified address checking if they are dividends to pay
+  * @param _to The address to transfer to.
+  * @param _value The amount to be transferred.
+  */
   function transfer(address _to, uint256 _value) public returns (bool) {
     checkDividend(msg.sender);
     return super.transfer(_to, _value);
   }
 
+  /**
+   * @dev Transfer tokens from one address to another checking if they are dividends to pay
+   * @param _from address The address which you want to send tokens from
+   * @param _to address The address which you want to transfer to
+   * @param _value uint256 the amount of tokens to be transferred
+   */
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     checkDividend(_from);
     return super.transferFrom(_from, _to, _value);
   }
 
+  /**
+   * @dev Returns true if we are still in pre sale period
+   */
   function isInPresale() constant returns (bool) {
     return preSaleEndTime >= now;
   }
 
+  /**
+   * @dev Returns true if we are still in sale period
+   */
   function isInSale() constant returns (bool) {
     return saleEndTime >= now;
-  }
-
-  // @return true if the transaction can buy tokens
-  function validPurchase() internal constant returns (bool) {
-    bool nonZeroPurchase = (msg.value != 0);
-    return nonZeroPurchase && isInSale();
   }
 
   // @return true if the transaction can buy tokens

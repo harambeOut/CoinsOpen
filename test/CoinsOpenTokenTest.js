@@ -12,7 +12,7 @@ contract('CoinsOpenToken', function(accounts) {
 
   it("should have a 0 balance in the accounts", function() {
     return CoinsOpenToken.deployed().then(function(instance) {
-      var event = instance.PriceQuery({fromBlock: 0, toBlock: 'latest'});
+      /*var event = instance.PriceQuery({fromBlock: 0, toBlock: 'latest'});
       event.watch(function(error, result){
         console.log(result);
       });
@@ -20,6 +20,7 @@ contract('CoinsOpenToken', function(accounts) {
       event.watch(function(error, result){
         console.log(result);
       });
+      */
       return instance.buyTokens(accounts[0], {value: web3.toWei(5, "ether")});
     }).then(function(balance) {
 
