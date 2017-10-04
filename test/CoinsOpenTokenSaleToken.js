@@ -65,4 +65,42 @@ contract('CoinsOpenToken', function(accounts) {
 
   });
 
+
+  it("Sale is properly working", async () =>  {
+
+    const COT = await CoinsOpenToken.new({from: owner, gas: gasAmount});
+
+    // We jump to the Sale opening
+    const startsAt = await COT.saleStartTime.call();
+    const currentBlockTimestamp = await getTimestampOfCurrentBlock();
+    await addSeconds(startsAt - currentBlockTimestamp + 1000);
+
+    const startingSupply = await COT.saleSupply.call();
+    const prestartingSupply = await COT.presaleSupply.call();
+
+    weiRaised = await COT.totalWeiRaised.call();
+    assert.equal(weiRaised.toNumber(), 0, "The amount of wei raised should be 0 at initialization.");
+
+    const tokenPrice = await COT.saleTokenPrice.call();
+
+    await COT.buyTokens(buyer1, {from: buyer1, gas: gasAmount, value: web3.toWei("1", "Ether")});
+
+    sleep(15000); //Waiting for Oraclize to answer
+
+    const etherPriceUSD = await COT.etherPriceUSD.call();
+    const tokens = etherPriceUSD.toNumber() / tokenPrice.toNumber();
+    const nbTokens = await COT.balanceOf(buyer1, {from: buyer1, gas: gasAmount});
+
+    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, tokens, 0.00001, "The amount of token bought is not correct.");
+
+    weiRaised = await COT.totalWeiRaised.call();
+    assert.equal(weiRaised.toNumber(), web3.toWei("1", "Ether"), "The amount of wei raised should be 1 Ethereum.");
+
+    const endSupply = await COT.saleSupply.call();
+
+    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber() + prestartingSupply.toNumber(), 10000, "The sale supply has not been correctly updated.");
+
+
+  });
+
 });

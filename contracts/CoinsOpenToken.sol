@@ -79,7 +79,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   event DividendAvailable(uint indexed amount, uint indexed weipertoken);
 
   function CoinsOpenToken() {
-    OAR = OraclizeAddrResolverI(0x75A20DEa82dfAc35a2E5b31Dfe904dF29214b53B); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
+    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
 
   function() payable {
@@ -209,7 +209,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @dev Returns true if we are still in pre sale period
    */
   function isInPresale() constant returns (bool) {
-    return saleStartTime <= now;
+    return saleStartTime > now;
   }
 
   /**
