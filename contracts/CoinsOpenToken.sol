@@ -235,7 +235,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   function distributeReserveSupply(uint256 _amount, address _receiver) onlyOwner {
     require (_amount <= reserveSupply);
     checkDividend(_receiver);
-    balances[_receiver].add(_amount);
+    balances[_receiver] = balances[_receiver].add(_amount);
     reserveSupply.sub(_amount);
     Transfer(0x0, _receiver, _amount);
   }
