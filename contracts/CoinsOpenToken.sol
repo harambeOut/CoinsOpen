@@ -21,17 +21,22 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   string public constant name = "COT";
   string public constant symbol = "COT";
   uint8 public constant decimals = 18;
-  uint public totalSupply = 21000000 * (10 ** decimals);
-  uint256 public presaleSupply = 2000000 * (10 ** decimals);
-  uint256 public saleSupply = 12000000 * (10 ** decimals);
-  uint256 public reserveSupply = 7000000 * (10 ** decimals);
+
+  uint public totalSupply = 21000000000000000000000000;
+  uint256 public presaleSupply = 2000000000000000000000000;
+  uint256 public saleSupply = 12000000000000000000000000;
+  uint256 public reserveSupply = 7000000000000000000000000;
 
   uint256 public saleStartTime = 1511136000; /* Monday, November 20, 2017 12:00:00 AM */
   uint256 public saleEndTime = 1513728000; /* Wednesday, December 20, 2017 12:00:00 AM */
-  uint256 public preSaleEndTime = 1508457600; /* Friday, October 20, 2017 12:00:00 AM */
+  uint256 public preSaleStartTime = 1508457600; /* Friday, October 20, 2017 12:00:00 AM */
+
+  uint256 public totalWeiRaised = 0;
 
   uint256 public preSaleTokenPrice = 70;
   uint256 public saleTokenPrice = 100;
+
+  uint256 public etherPriceUSD = 0;
 
   mapping (bytes32 => BuyOrder) buyOrders;
 
@@ -73,8 +78,8 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    */
   event DividendAvailable(uint indexed amount, uint indexed weipertoken);
 
-  function CoinsOpenToken(address locked) {
-    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
+  function CoinsOpenToken() {
+    OAR = OraclizeAddrResolverI(0x75A20DEa82dfAc35a2E5b31Dfe904dF29214b53B); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
 
   function() payable {
@@ -114,12 +119,12 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     require (msg.sender == oraclize_cbAddress());
     BuyOrder storage order = buyOrders[_myid];
     require (order.wether != 0);
-    uint256 etherPriceUSD = parseInt(_result, 2);
+    etherPriceUSD = parseInt(_result, 2);
     uint256 tokenPrice = saleTokenPrice;
     if (order.presale) {
       tokenPrice = preSaleTokenPrice;
     }
-    uint256 centsAmount = (order.wether).div(etherPriceUSD) * 1 ether;
+    uint256 centsAmount = (order.wether).mul(etherPriceUSD);
     uint256 tokens = centsAmount.div(tokenPrice);
     if (order.presale) {
       if (presaleSupply < tokens) {
@@ -132,17 +137,20 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
         return;
       }
     }
-    checkDividend(order.receiver);
+
+    //checkDividend(order.receiver);
     TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
     //@TODO convert amount of tokens: Have to test
+    totalWeiRaised = totalWeiRaised.add(order.wether);
     Transfer(0x0, order.receiver, tokens);
-    balances[order.receiver].add(tokens);
+    balances[order.receiver] = balances[order.receiver].add(tokens);
     if (order.presale) {
-      presaleSupply.sub(tokens);
+      presaleSupply = presaleSupply.sub(tokens);
     } else {
-      saleSupply.sub(tokens);
+      saleSupply = saleSupply.sub(tokens);
     }
     buyOrders[_myid].wether = 0; //Clean the order book
+
   }
 
   /**
@@ -168,8 +176,8 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
           toSend += balanceOf(_account).mul(dividendList[i]);
         }
         if (toSend > 0 && toSend <= dividendAmount) {
-          _account.send(toSend);
-          dividendAmount.sub(toSend);
+          _account.transfer(toSend);
+          dividendAmount = dividendAmount.sub(toSend);
         }
       }
       lastDividend[_account] = currentDividend;
@@ -201,20 +209,20 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @dev Returns true if we are still in pre sale period
    */
   function isInPresale() constant returns (bool) {
-    return preSaleEndTime >= now;
+    return saleStartTime <= now;
   }
 
   /**
    * @dev Returns true if we are still in sale period
    */
   function isInSale() constant returns (bool) {
-    return saleEndTime >= now;
+    return saleEndTime >= now && preSaleStartTime <= now;
   }
 
   // @return true if the transaction can buy tokens
   function checkPresale() internal {
     if (!isInPresale() && presaleSupply > 0) {
-      saleSupply.add(presaleSupply);
+      saleSupply = saleSupply.add(presaleSupply);
       presaleSupply = 0;
     }
   }
