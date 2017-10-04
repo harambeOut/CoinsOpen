@@ -1,12 +1,11 @@
 pragma solidity ^0.4.8;
 
-import "./StandardToken.sol";
+import "./PausableToken.sol";
 import "./SafeMath.sol";
-import "./Ownable.sol";
 import "./OraclizeAPI.sol";
 
 
-contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
+contract CoinsOpenToken is PausableToken, usingOraclize
 {
 
   /*
@@ -14,6 +13,12 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     Ownable:
     -onlyOwner
     -transferOwnership
+
+    Pausable:
+    -Pause
+    -Unpause
+    -whenNotPaused
+    -whenPaused
 
   */
 
@@ -82,7 +87,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
     OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
 
-  function() payable {
+  function() payable whenNotPaused {
     if (msg.sender == owner) {
       giveDividend();
     } else {
@@ -94,7 +99,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * Buy tokens during the sale/presale
    * @param _receiver who should receive the tokens
    */
-  function buyTokens(address _receiver) payable {
+  function buyTokens(address _receiver) payable whenNotPaused {
     require (msg.value != 0);
     require (_receiver != 0x0);
     require (isInSale());
@@ -156,7 +161,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   /**
    * @dev Pay this function to add the dividends
    */
-  function giveDividend() payable {
+  function giveDividend() payable whenNotPaused {
     require (msg.value != 0);
     dividendAmount.add(msg.value);
     dividendList[currentDividend] = msg.value / totalSupply;
@@ -168,7 +173,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @dev Returns true if we are still in pre sale period
    * @param _account The address to check and send dividends
    */
-  function checkDividend(address _account) {
+  function checkDividend(address _account) whenNotPaused {
     if (lastDividend[_account] != currentDividend) {
       if (balanceOf(_account) != 0) {
         uint256 toSend = 0;
@@ -232,7 +237,7 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
    * @param _amount Amount to transfer
    * @param _receiver Address of the receiver
    */
-  function distributeReserveSupply(uint256 _amount, address _receiver) onlyOwner {
+  function distributeReserveSupply(uint256 _amount, address _receiver) onlyOwner whenNotPaused {
     require (_amount <= reserveSupply);
     checkDividend(_receiver);
     balances[_receiver] = balances[_receiver].add(_amount);
