@@ -21,10 +21,10 @@ contract CoinsOpenToken is StandardToken, usingOraclize, Ownable
   string public constant name = "COT";
   string public constant symbol = "COT";
   uint8 public constant decimals = 18;
-  uint public totalSupply = 21000000 * decimals;
-  uint256 public presaleSupply = 2000000  * decimals;
-  uint256 public saleSupply = 12000000 * decimals;
-  uint256 public reserveSupply = 7000000 * decimals;
+  uint public totalSupply = 21000000 * (10 ** decimals);
+  uint256 public presaleSupply = 2000000 * (10 ** decimals);
+  uint256 public saleSupply = 12000000 * (10 ** decimals);
+  uint256 public reserveSupply = 7000000 * (10 ** decimals);
 
   uint256 public saleStartTime = 1511136000; /* Monday, November 20, 2017 12:00:00 AM */
   uint256 public saleEndTime = 1513728000; /* Wednesday, December 20, 2017 12:00:00 AM */

@@ -1,5 +1,8 @@
 var CoinsOpenToken = artifacts.require("./CoinsOpenToken.sol");
 
+var BigNumber = require('bignumber.js');
+require('babel-polyfill');
+
 contract('CoinsOpenToken', function(accounts) {
 
   it("should have a 0 balance in the accounts", function() {
