@@ -60,7 +60,7 @@ contract('CoinsOpenToken', function(accounts) {
 
     const endSupply = await COT.presaleSupply.call();
 
-    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber(), 10000, "The sale supply has not been correctly updated.");
+    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber(), 1000000000000000000, "The sale supply has not been correctly updated.");
 
 
   });
@@ -98,7 +98,7 @@ contract('CoinsOpenToken', function(accounts) {
 
     const endSupply = await COT.saleSupply.call();
 
-    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber() + prestartingSupply.toNumber(), 10000, "The sale supply has not been correctly updated.");
+    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber() + prestartingSupply.toNumber(), 1000000000000000000, "The sale supply has not been correctly updated.");
 
 
   });

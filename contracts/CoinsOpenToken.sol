@@ -27,10 +27,10 @@ contract CoinsOpenToken is PausableToken, usingOraclize
   string public constant symbol = "COT";
   uint8 public constant decimals = 18;
 
-  uint public totalSupply = 21000000000000000000000000;
+  uint public totalSupply = 23000000000000000000000000;
   uint256 public presaleSupply = 2000000000000000000000000;
-  uint256 public saleSupply = 12000000000000000000000000;
-  uint256 public reserveSupply = 7000000000000000000000000;
+  uint256 public saleSupply = 13000000000000000000000000;
+  uint256 public reserveSupply = 8000000000000000000000000;
 
   uint256 public saleStartTime = 1511136000; /* Monday, November 20, 2017 12:00:00 AM */
   uint256 public saleEndTime = 1513728000; /* Wednesday, December 20, 2017 12:00:00 AM */
@@ -39,7 +39,7 @@ contract CoinsOpenToken is PausableToken, usingOraclize
   uint256 public totalWeiRaised = 0;
 
   uint256 public preSaleTokenPrice = 70;
-  uint256 public saleTokenPrice = 100;
+  uint256 public saleTokenPrice = 170;
 
   uint256 public etherPriceUSD = 0;
 
@@ -79,11 +79,18 @@ contract CoinsOpenToken is PausableToken, usingOraclize
   /**
    * event for notifying of a Ether received to distribute as dividend
    * @param amount of dividend received
-   * @param weipertoken wei received per stored token
    */
-  event DividendAvailable(uint indexed amount, uint indexed weipertoken);
+  event DividendAvailable(uint amount);
+
+  /**
+   * event triggered when sending dividend to owner
+   * @param receiver who is receiving the payout
+   * @param amountofether paid received
+   */
+  event SendDividend(address indexed receiver, uint amountofether);
 
   function CoinsOpenToken() {
+    assert(totalSupply == presaleSupply + saleSupply + reserveSupply);
     OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
 
@@ -93,6 +100,12 @@ contract CoinsOpenToken is PausableToken, usingOraclize
     } else {
       buyTokens(msg.sender);
     }
+  }
+
+  function endSale() whenNotPaused {
+    require (!isInSale());
+    require (saleSupply != 0);
+    reserveSupply = reserveSupply.add(saleSupply);
   }
 
   /**
@@ -142,10 +155,8 @@ contract CoinsOpenToken is PausableToken, usingOraclize
         return;
       }
     }
-
-    //checkDividend(order.receiver);
+    checkDividend(order.receiver);
     TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
-    //@TODO convert amount of tokens: Have to test
     totalWeiRaised = totalWeiRaised.add(order.wether);
     Transfer(0x0, order.receiver, tokens);
     balances[order.receiver] = balances[order.receiver].add(tokens);
@@ -163,10 +174,10 @@ contract CoinsOpenToken is PausableToken, usingOraclize
    */
   function giveDividend() payable whenNotPaused {
     require (msg.value != 0);
-    dividendAmount.add(msg.value);
-    dividendList[currentDividend] = msg.value / totalSupply;
-    currentDividend += 1;
-    DividendAvailable(msg.value, msg.value / totalSupply);
+    dividendAmount = dividendAmount.add(msg.value);
+    dividendList[currentDividend] = (msg.value).mul(10000000000).div(totalSupply);
+    currentDividend = currentDividend.add(1);
+    DividendAvailable(msg.value);
   }
 
   /**
@@ -177,12 +188,13 @@ contract CoinsOpenToken is PausableToken, usingOraclize
     if (lastDividend[_account] != currentDividend) {
       if (balanceOf(_account) != 0) {
         uint256 toSend = 0;
-        for (uint i = lastDividend[_account]; i <= currentDividend; i++) {
-          toSend += balanceOf(_account).mul(dividendList[i]);
+        for (uint i = lastDividend[_account]; i < currentDividend; i++) {
+          toSend += balanceOf(_account).mul(dividendList[i]).div(10000000000);
         }
         if (toSend > 0 && toSend <= dividendAmount) {
           _account.transfer(toSend);
           dividendAmount = dividendAmount.sub(toSend);
+          SendDividend(_account, toSend);
         }
       }
       lastDividend[_account] = currentDividend;
