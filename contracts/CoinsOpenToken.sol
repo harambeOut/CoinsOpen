@@ -38,8 +38,8 @@ contract CoinsOpenToken is PausableToken, usingOraclize
 
   uint256 public totalWeiRaised = 0;
 
-  uint256 public preSaleTokenPrice = 70;
-  uint256 public saleTokenPrice = 170;
+  uint256 public preSaleTokenPrice = 20;
+  uint256 public saleTokenPrice = 40;
 
   uint256 public etherPriceUSD = 0;
 
