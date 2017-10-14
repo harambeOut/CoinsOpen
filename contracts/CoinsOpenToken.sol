@@ -91,7 +91,7 @@ contract CoinsOpenToken is PausableToken, usingOraclize
 
   function CoinsOpenToken() {
     assert(totalSupply == presaleSupply + saleSupply + reserveSupply);
-    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
+    //OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475); /* TODO: NEED TO REMOVE FOR PUBLISHING TO MAINNET */
   }
 
   function() payable whenNotPaused {
