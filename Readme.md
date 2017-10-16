@@ -3,7 +3,7 @@
 Succinct and clear contracts that estimate dividends and then distribute 100% of CoinsOpen.com profits 4 times a year to holders of COT. Courtesy of [CoinsOpen.com](https://coinsopen.com) team.
 
 
-CoinsOpen.com is a P2P Local Ethereum and Ethereum tokens exchange. You can buy there assets like Tether, Golem, EOS and thousands of other tokens at lowest fees, no coins can be declined in listing.
+CoinsOpen.com is a P2P privacy-oriented Local Ethereum and Ethereum Tokens Exchange. You can buy tokens at lowest fees and no coin listing is declined - peers weed out bad coins themselves.
 
 
 ## Install
