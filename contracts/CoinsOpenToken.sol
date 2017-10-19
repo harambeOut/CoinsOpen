@@ -1,26 +1,9 @@
 pragma solidity ^0.4.8;
 
-import "./PausableToken.sol";
-import "./SafeMath.sol";
-import "./OraclizeAPI.sol";
+import "./StandardToken.sol";
 
-
-contract CoinsOpenToken is PausableToken, usingOraclize
+contract CoinsOpenToken is StandardToken
 {
-
-  /*
-  Inherited functions:
-    Ownable:
-    -onlyOwner
-    -transferOwnership
-
-    Pausable:
-    -Pause
-    -Unpause
-    -whenNotPaused
-    -whenPaused
-
-  */
 
   // Token informations
   string public constant name = "COT";
@@ -35,15 +18,12 @@ contract CoinsOpenToken is PausableToken, usingOraclize
   uint256 public saleStartTime = 1511136000; /* Monday, November 20, 2017 12:00:00 AM */
   uint256 public saleEndTime = 1513728000; /* Wednesday, December 20, 2017 12:00:00 AM */
   uint256 public preSaleStartTime = 1508457600; /* Friday, October 20, 2017 12:00:00 AM */
+  uint256 public developerLock = 1500508800;
 
   uint256 public totalWeiRaised = 0;
 
   uint256 public preSaleTokenPrice = 20;
   uint256 public saleTokenPrice = 40;
-
-  uint256 public etherPriceUSD = 0;
-
-  mapping (bytes32 => BuyOrder) buyOrders;
 
   mapping (address => uint256) lastDividend;
   mapping (uint256 =>uint256) dividendList;
@@ -65,16 +45,6 @@ contract CoinsOpenToken is PausableToken, usingOraclize
    * @param amount amount of tokens purchased
    */
   event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount, bool presale);
-
-  /**
-   * event for querying Ethereum USD price for a buy order
-   * @param purchaser who paid for the tokens
-   * @param beneficiary who got the tokens
-   * @param amount requestid the ID of the oraclize request
-   * @param amount amount of tokens purchased
-   * @param presale was it bought in presale?
-   */
-  event PriceQuery(address indexed purchaser, address indexed beneficiary, bytes32 indexed requestid, uint256 amount, bool presale);
 
   /**
    * event for notifying of a Ether received to distribute as dividend
@@ -120,53 +90,32 @@ contract CoinsOpenToken is PausableToken, usingOraclize
     if (!isPresale) {
       checkPresale();
     }
-    bytes32 orderId = oraclize_query("URL", "json(https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD).USD");
-    buyOrders[orderId].wether = msg.value;
-    buyOrders[orderId].receiver = _receiver;
-    buyOrders[orderId].payer = msg.sender;
-    buyOrders[orderId].presale = isPresale;
-    PriceQuery(msg.sender, _receiver, orderId, msg.value, isPresale);
-  }
-
-  /**
-   * Oraclize callback to receive Ethereum USD price
-   * @param _myid ID of the request
-   * @param _result String data
-   */
-  function __callback(bytes32 _myid, string _result) {
-    require (msg.sender == oraclize_cbAddress());
-    BuyOrder storage order = buyOrders[_myid];
-    require (order.wether != 0);
-    etherPriceUSD = parseInt(_result, 2);
     uint256 tokenPrice = saleTokenPrice;
-    if (order.presale) {
+    if (isPresale) {
       tokenPrice = preSaleTokenPrice;
     }
-    uint256 centsAmount = (order.wether).mul(etherPriceUSD);
-    uint256 tokens = centsAmount.div(tokenPrice);
-    if (order.presale) {
+    uint256 tokens = (msg.value).mul(tokenPrice) / 100;
+    if (isPresale) {
       if (presaleSupply < tokens) {
-        order.payer.transfer(order.wether);
+        msg.sender.transfer(msg.value);
         return;
       }
     } else {
       if (saleSupply < tokens) {
-        order.payer.transfer(order.wether);
+        msg.sender.transfer(msg.value);
         return;
       }
     }
-    checkDividend(order.receiver);
-    TokenPurchase(order.payer, order.receiver, order.wether, tokens, order.presale);
-    totalWeiRaised = totalWeiRaised.add(order.wether);
-    Transfer(0x0, order.receiver, tokens);
-    balances[order.receiver] = balances[order.receiver].add(tokens);
-    if (order.presale) {
+    checkDividend(_receiver);
+    TokenPurchase(msg.sender, _receiver, msg.value, tokens, isPresale);
+    totalWeiRaised = totalWeiRaised.add(msg.value);
+    Transfer(0x0, _receiver, tokens);
+    balances[_receiver] = balances[_receiver].add(tokens);
+    if (isPresale) {
       presaleSupply = presaleSupply.sub(tokens);
     } else {
       saleSupply = saleSupply.sub(tokens);
     }
-    buyOrders[_myid].wether = 0; //Clean the order book
-
   }
 
   /**
@@ -251,6 +200,7 @@ contract CoinsOpenToken is PausableToken, usingOraclize
    */
   function distributeReserveSupply(uint256 _amount, address _receiver) onlyOwner whenNotPaused {
     require (_amount <= reserveSupply);
+    require (now >= developerLock);
     checkDividend(_receiver);
     balances[_receiver] = balances[_receiver].add(_amount);
     reserveSupply.sub(_amount);

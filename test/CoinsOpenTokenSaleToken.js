@@ -47,20 +47,16 @@ contract('CoinsOpenToken', function(accounts) {
 
     await COT.buyTokens(buyer1, {from: buyer1, gas: gasAmount, value: web3.toWei("1", "Ether")});
 
-    sleep(15000); //Waiting for Oraclize to answer
-
-    const etherPriceUSD = await COT.etherPriceUSD.call();
-    const tokens = etherPriceUSD.toNumber() / tokenPrice.toNumber();
     const nbTokens = await COT.balanceOf(buyer1, {from: buyer1, gas: gasAmount});
 
-    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, tokens, 0.00001, "The amount of token bought is not correct.");
+    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, web3.toWei("1", "Ether") * tokenPrice / 100 / 1000000000000000000, 0.0000001, "The amount of token bought is not correct.");
 
     weiRaised = await COT.totalWeiRaised.call();
     assert.equal(weiRaised.toNumber(), web3.toWei("1", "Ether"), "The amount of wei raised should be 1 Ethereum.");
 
     const endSupply = await COT.presaleSupply.call();
 
-    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber(), 1000000000000000000, "The sale supply has not been correctly updated.");
+    assert.closeTo(endSupply.toNumber() + nbTokens.toNumber(), startingSupply.toNumber(), 1000000000000000000 , "The sale supply has not been correctly updated.");
 
 
   });
@@ -85,13 +81,10 @@ contract('CoinsOpenToken', function(accounts) {
 
     await COT.buyTokens(buyer1, {from: buyer1, gas: gasAmount, value: web3.toWei("1", "Ether")});
 
-    sleep(15000); //Waiting for Oraclize to answer
-
-    const etherPriceUSD = await COT.etherPriceUSD.call();
-    const tokens = etherPriceUSD.toNumber() / tokenPrice.toNumber();
     const nbTokens = await COT.balanceOf(buyer1, {from: buyer1, gas: gasAmount});
 
-    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, tokens, 0.00001, "The amount of token bought is not correct.");
+
+    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, web3.toWei("1", "Ether") * tokenPrice / 100 / 1000000000000000000, 0.000001, "The amount of token bought is not correct.");
 
     weiRaised = await COT.totalWeiRaised.call();
     assert.equal(weiRaised.toNumber(), web3.toWei("1", "Ether"), "The amount of wei raised should be 1 Ethereum.");
