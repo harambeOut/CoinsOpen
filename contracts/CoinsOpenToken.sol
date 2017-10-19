@@ -22,8 +22,8 @@ contract CoinsOpenToken is StandardToken
 
   uint256 public totalWeiRaised = 0;
 
-  uint256 public preSaleTokenPrice = 20;
-  uint256 public saleTokenPrice = 40;
+  uint256 public preSaleTokenPrice = 1400;
+  uint256 public saleTokenPrice = 700;
 
   mapping (address => uint256) lastDividend;
   mapping (uint256 =>uint256) dividendList;
@@ -94,7 +94,7 @@ contract CoinsOpenToken is StandardToken
     if (isPresale) {
       tokenPrice = preSaleTokenPrice;
     }
-    uint256 tokens = (msg.value).mul(tokenPrice) / 100;
+    uint256 tokens = (msg.value).mul(tokenPrice);
     if (isPresale) {
       if (presaleSupply < tokens) {
         msg.sender.transfer(msg.value);

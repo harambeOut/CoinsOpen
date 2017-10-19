@@ -49,7 +49,7 @@ contract('CoinsOpenToken', function(accounts) {
 
     const nbTokens = await COT.balanceOf(buyer1, {from: buyer1, gas: gasAmount});
 
-    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, web3.toWei("1", "Ether") * tokenPrice / 100 / 1000000000000000000, 0.0000001, "The amount of token bought is not correct.");
+    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, web3.toWei("1", "Ether") * tokenPrice / 1000000000000000000, 0.0000001, "The amount of token bought is not correct.");
 
     weiRaised = await COT.totalWeiRaised.call();
     assert.equal(weiRaised.toNumber(), web3.toWei("1", "Ether"), "The amount of wei raised should be 1 Ethereum.");
@@ -84,7 +84,7 @@ contract('CoinsOpenToken', function(accounts) {
     const nbTokens = await COT.balanceOf(buyer1, {from: buyer1, gas: gasAmount});
 
 
-    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, web3.toWei("1", "Ether") * tokenPrice / 100 / 1000000000000000000, 0.000001, "The amount of token bought is not correct.");
+    assert.closeTo(nbTokens.toNumber() / 1000000000000000000, web3.toWei("1", "Ether") * tokenPrice / 1000000000000000000, 0.000001, "The amount of token bought is not correct.");
 
     weiRaised = await COT.totalWeiRaised.call();
     assert.equal(weiRaised.toNumber(), web3.toWei("1", "Ether"), "The amount of wei raised should be 1 Ethereum.");
